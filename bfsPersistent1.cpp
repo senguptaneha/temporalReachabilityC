@@ -58,6 +58,7 @@ int TemporalGraph::isReachable(int src, int dst, int startTime, int endTime, int
 	bool isInQueue[numNodes];
 	std::vector<Interval*> *bfsIntervals = new vector<Interval*>[numNodes];
 	std::vector<int> queue;
+	int numAdded = 0;
 	for (int i = 0; i < numNodes; i++) isInQueue[i] = false;
 	int u = src;
 	addInterval(bfsIntervals[u], startTime, endTime);
@@ -84,6 +85,7 @@ int TemporalGraph::isReachable(int src, int dst, int startTime, int endTime, int
 				}
 
 				if (!subFlag){
+					if (v == dst) numAdded += 1;
 					addInterval(bfsIntervals[v], z->getStartTime(), z->getEndTime());
 					if (isInQueue[v] == false){
 						queue.push_back(v);
@@ -96,6 +98,7 @@ int TemporalGraph::isReachable(int src, int dst, int startTime, int endTime, int
 
 		}
 	}
+	cout << numAdded << " ";
 	int answer = 0;
 	for (int i = 0; i < bfsIntervals[dst].size(); i++){
 		if (bfsIntervals[dst][i]->getStartTime() <= startTime && bfsIntervals[dst][i]->getEndTime() >= endTime){
