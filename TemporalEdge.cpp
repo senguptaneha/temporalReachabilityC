@@ -37,3 +37,11 @@ void TemporalEdge::setEndTime(int isEndTime){
 Interval* TemporalEdge::getInterval(){
 	return interval;
 }
+
+
+bool TemporalEdge::operator <( const TemporalEdge &rhs ) const{
+	if ( destId < rhs.destId ) return true;
+	if ((destId == rhs.destId)&&(interval->getStartTime() < rhs.interval->getStartTime())) return true;
+	if ((destId == rhs.destId)&&(interval->getStartTime() == rhs.interval->getStartTime())&&(interval->getEndTime() < rhs.interval->getEndTime())) return true;
+	return false;
+}

@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <cstdlib>
 #include <ctime>
+#include <fstream>
 
 #include "TemporalNode.h"
 #include "malloc_count-0.7/malloc_count.h"
@@ -34,6 +35,9 @@ public:
 	Stop *srcStops, *dstStops;
 	int c_budget;
 	double c_numWalks, c_walkLength;
+
+
+
 	void initializeRRParams(int diameter);
 	int buildStops(int sourceNode, bool direction, int startTime, int endTime, int dst, int c, bool fractional);
 	bool rrParamsInitialized;
@@ -45,15 +49,25 @@ public:
 
 	void changeForTopChain();
 
+
 private:
 	std::vector<TemporalNode*> nodes;
 	int numNodes;
 	int numEdges;
 	int maxTimestamp;
 
+	std::ofstream randomFile;
+	std::ifstream randomFileI;
+
+	int *randomNumbers;
+	int randomNumbersUsed;
+	int numRandomNumbers;
+
 	void addEdgeToIndex(int src, int dst, int startTime);
 	void removeEdgeFromIndex(int src, int dst, int startTime, int endTime);
 
+	void populateRandomFile();
+	int getNextRand();
 
 
 };

@@ -4,15 +4,21 @@
 
 Stop::Stop(){
 	nodeId = -1;
+	numWalks = 0;
+	walkLength = 0;
 };
 
 Stop::Stop(int isNodeId, Interval isInterval){
 	nodeId = isNodeId;
 	interval = isInterval;
+	numWalks = 0;
+	walkLength = 0;
 }
 
 void Stop::reset(){
 	nodeId = -1;
+	numWalks = 0;
+	walkLength = 0;
 }
 
 int Stop::getNodeId(){

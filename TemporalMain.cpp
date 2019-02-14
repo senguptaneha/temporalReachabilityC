@@ -43,9 +43,9 @@ int main(int argc, char *argv[]){
 	int dia = 19;
 	cout << "Read Graph " << tg->numberOfNodes() << endl << flush;
 
-	c_budget = 3;
-	c_numWalks = 1.0;
-
+	tg->c_budget = c_budget;
+	tg->c_numWalks = c_numWalks;
+	tg->c_walkLength = 1;
 	/*for (c_walkLength = 0.01; c_walkLength < 2.0; c_walkLength *= 2){
 		cout << "Params: " << c_numWalks << " " << c_walkLength << " " << c_budget << endl << flush;
 		tg->c_walkLength = c_walkLength;
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]){
 		tg->c_budget = c_budget;
 		tg->readAndRunQuery(queryFile, c, fractional);
 	}*/
-	tg->c_walkLength = 1;
+
 	tg->readAndRunQuery(queryFile, c, fractional);
 
 

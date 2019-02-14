@@ -18,68 +18,92 @@ void TemporalGraph::removeEdgeFromIndex(int src, int dst, int startTime, int end
 
 //last 3 params not actually used, only for compatibility across methods.
 int TemporalGraph::buildStops(int src, bool direction, int startTime, int endTime, int dst, int c, bool fractional){
+	struct timespec start, finish, start1, finish1, start2, finish2;
+	double sampleEdgeTimeN = 0, sampleEdgeTime = 0, sampleEdgeTimeO = 0;
+	clock_gettime(CLOCK_MONOTONIC, &start);
 	Stop *stops = srcStops;
 	if (!direction) stops = dstStops;
 	for (int i = 0; i <= numStops; i++) stops[i].reset();
-
+	Interval *newInterval = new Interval();
 	int stopIndex = 0;
 	stops[stopIndex].setNodeId(src);
 	stops[stopIndex].setStartTime(startTime);
 	stops[stopIndex].setEndTime(endTime);
-
+	bool flagSeenDest = false;
 	for (int i = 0; i < numWalks; i++){
 		int budget = c_budget * walkLength;
 		Interval *currInterval = new Interval(startTime, endTime);
 		int currNode = src;
 		bool noEdges = false;
 		for (int j = 0; j < walkLength; j++){
+			clock_gettime(CLOCK_MONOTONIC, &start1);
 			TemporalNode *n = nodes[currNode];
 			TemporalEdge *e;
-			Interval *newInterval = NULL;
+
 			/*cout << "Sampling from " << currNode << ", with budget = " << budget << ", d = " << direction << endl;
 			cout << "currInterval is ( " << currInterval->getStartTime() << ", " << currInterval->getEndTime() << ") " << endl;*/
-			while ((newInterval == NULL) && (budget > 0)){
+			bool flag = false;
+			while ((flag == false) && (budget > 0)){
 				budget -= 1;
+				clock_gettime(CLOCK_MONOTONIC, &start2);
 				e = n->sampleEdge(direction);
+				clock_gettime(CLOCK_MONOTONIC, &finish2);
 
+                sampleEdgeTimeO += (finish2.tv_sec - start2.tv_sec) + (finish2.tv_nsec - start2.tv_nsec)/pow(10,9);
 				if (e == NULL){
 					n = nodes[src];
 					currNode = src; //jump back to source, instead of ending the walk at a dead end.
 					currInterval->setStartTime(startTime);
 					currInterval->setEndTime(endTime);
 				}
-				else newInterval = currInterval->intersection(e->getInterval());
+				else{
+					flag = currInterval->intersectionR(e->getInterval(), newInterval);
+					/*newInterval = currInterval->intersection(e->getInterval());
+					if (newInterval) flag = true;*/
+				}
 			}
+			clock_gettime(CLOCK_MONOTONIC, &finish1);
+			sampleEdgeTime += (finish1.tv_sec - start1.tv_sec) + (finish1.tv_nsec - start1.tv_nsec)/pow(10,9);
 			/*cout << "Sampled from " << currNode << ", with budget = " << budget << ", d = " << direction << endl;
 			if (newInterval){
 				cout << "Found Edge to " << e->getDestId() << ", ( " << e->getStartTime() << ", " << e->getEndTime() << ")" << endl;
 				cout << "newInterval = ( " << newInterval->getStartTime() << ", " << newInterval->getEndTime() << ")" << endl;
 			}
 			*/
-			if (n->getNumEdges(direction) == 1 && newInterval == NULL){   //this is also practically a dead-end - one edge that doesn't satisfy constraint
+			clock_gettime(CLOCK_MONOTONIC, &start1);
+
+			if (n->getNumEdges(direction) == 1 && (flag == false)){   //this is also practically a dead-end - one edge that doesn't satisfy constraint
                 n = nodes[src];
                 currNode = src; //jump back to source, instead of ending the walk at a dead end.
                 currInterval->setStartTime(startTime);
                 currInterval->setEndTime(endTime);
 			}
 
-			if (newInterval){
+
+
+			if (flag){
 				stopIndex += 1;
 				if (stopIndex <= numStops){
 					stops[stopIndex].setNodeId(e->getDestId());
 					stops[stopIndex].setStartTime(newInterval->getStartTime());
 					stops[stopIndex].setEndTime(newInterval->getEndTime());
+					if (stops[stopIndex].getNodeId() == dst) flagSeenDest = true;
 				}
 				currNode = e->getDestId();
-				free(currInterval);
-				currInterval = newInterval;
-				newInterval = NULL;
+				currInterval->setStartTime(newInterval->getStartTime());
+				currInterval->setEndTime(newInterval->getEndTime());
 			}
+			clock_gettime(CLOCK_MONOTONIC, &finish1);
+			sampleEdgeTimeN += (finish1.tv_sec - start1.tv_sec) + (finish1.tv_nsec - start1.tv_nsec)/pow(10,9);
 			if ((budget == 0) || (noEdges)) break;
 		}
 		free(currInterval);
 	}
-	return stopIndex;
+	clock_gettime(CLOCK_MONOTONIC, &finish);
+	double buildStopsTime = (finish.tv_sec - start.tv_sec) + (finish.tv_nsec - start.tv_nsec)/pow(10,9);
+	//cout <<" Time for sampling edges = " << sampleEdgeTime/buildStopsTime << ", " << sampleEdgeTimeN/buildStopsTime << ", " << sampleEdgeTimeO/sampleEdgeTime <<  endl;
+	//if (flagSeenDest) return -1;
+	return stopIndex+1;
 }
 
 void addInterval(std::vector<Interval*> &intervalList, int startTime, int endTime){
@@ -119,15 +143,20 @@ int TemporalGraph::isReachable(int src, int dst, int startTime, int endTime, int
     if (src == dst) return 1;
 
 
+
 	int numSrcStops = buildStops(src, true, startTime, endTime, dst, c, fractional);
+	if (numSrcStops == 0) return 0;
+	if (numSrcStops == -1) return 1;
 	int numDstStops = buildStops(dst, false, startTime, endTime, src, c, fractional);
+	if (numDstStops == -1) return 1;
+
 
 	int answer = 0;
 
-    std::vector<Interval*> intervalList;
+    	std::vector<Interval*> intervalList;
 
 
-    qsort(srcStops, numSrcStops, sizeof(Stop), stopCompare);
+    	qsort(srcStops, numSrcStops, sizeof(Stop), stopCompare);
 	qsort(dstStops, numDstStops, sizeof(Stop), stopCompare);
 
     int srcIndex = 0, dstIndex = 0;
@@ -141,11 +170,11 @@ int TemporalGraph::isReachable(int src, int dst, int startTime, int endTime, int
             int endSIndex = srcIndex, endDIndex = dstIndex;
             while (endSIndex < numSrcStops && srcStops[endSIndex].getNodeId() == sNode) endSIndex++;
             while (endDIndex < numDstStops && dstStops[endDIndex].getNodeId() == dNode) endDIndex++;
-            if (endSIndex == numSrcStops) endSIndex = numSrcStops - 1;
-            if (endDIndex == numDstStops) endDIndex = numDstStops - 1;
+            //if (endSIndex == numSrcStops) endSIndex = numSrcStops - 1;
+            //if (endDIndex == numDstStops) endDIndex = numDstStops - 1;
 
-            for (int sI = srcIndex; sI <= endSIndex; sI++){
-                for (int dI = dstIndex; dI <= endDIndex; dI++){
+            for (int sI = srcIndex; sI < endSIndex; sI++){
+                for (int dI = dstIndex; dI < endDIndex; dI++){
                     int tlength = srcStops[sI].intersect(dstStops[dI]);
                     if (tlength > 0){
                         int s = srcStops[sI].getStartTime(), e = srcStops[sI].getEndTime();
@@ -175,6 +204,7 @@ int TemporalGraph::isReachable(int src, int dst, int startTime, int endTime, int
 	for (int j = 0; j < intervalList.size(); j++){
 			delete intervalList[j];
     }
+
     intervalList.clear();
     return answer;
 }

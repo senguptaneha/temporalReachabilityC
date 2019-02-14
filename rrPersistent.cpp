@@ -79,7 +79,7 @@ int TemporalGraph::buildStops(int src, bool direction, int startTime, int endTim
 		}
 		free(currInterval);
 	}
-	return stopIndex;
+	return stopIndex+1;
 }
 
 void addInterval(std::vector<Interval*> &intervalList, int startTime, int endTime){
@@ -141,11 +141,11 @@ int TemporalGraph::isReachable(int src, int dst, int startTime, int endTime, int
             int endSIndex = srcIndex, endDIndex = dstIndex;
             while (endSIndex < numSrcStops && srcStops[endSIndex].getNodeId() == sNode) endSIndex++;
             while (endDIndex < numDstStops && dstStops[endDIndex].getNodeId() == dNode) endDIndex++;
-            if (endSIndex == numSrcStops) endSIndex = numSrcStops - 1;
-            if (endDIndex == numDstStops) endDIndex = numDstStops - 1;
+            //if (endSIndex == numSrcStops) endSIndex = numSrcStops - 1;
+            //if (endDIndex == numDstStops) endDIndex = numDstStops - 1;
 
-            for (int sI = srcIndex; sI <= endSIndex; sI++){
-                for (int dI = dstIndex; dI <= endDIndex; dI++){
+            for (int sI = srcIndex; sI < endSIndex; sI++){
+                for (int dI = dstIndex; dI < endDIndex; dI++){
                     int tlength = srcStops[sI].intersect(dstStops[dI]);
                     if (tlength > 0){
                         int s = srcStops[sI].getStartTime(), e = srcStops[sI].getEndTime();

@@ -15,6 +15,8 @@ public:
 	int getStartTime();
 	int getEndTime();
 	int intersect(Stop other);
+	int numWalks;
+	int walkLength;
 
 private:
 	int nodeId;

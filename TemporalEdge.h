@@ -12,6 +12,8 @@ public:
 	int getDestId();
 	void setEndTime(int isEndTime);
 	Interval *getInterval();
+	bool operator <( const TemporalEdge &rhs ) const;
+
 
 private:
 	int destId;

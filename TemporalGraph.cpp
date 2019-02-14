@@ -24,6 +24,8 @@ TemporalGraph::TemporalGraph(){
 	deleteTimeVar = 0;
 	totalDeleteTime = 0;
     maxTimestamp = 0;
+
+
 }
 
 TemporalGraph::TemporalGraph(char *graphfilename, char *streamfilename){
@@ -186,6 +188,7 @@ void TemporalGraph::readAndRunQuery(char *queryFileName, int c, bool fractional)
 	clock_gettime(CLOCK_MONOTONIC, &start);
 	int dia = diameter();
 
+
 	for (int i = 0; i < 10; i++){
 
 		int d = diameter();
@@ -244,6 +247,7 @@ void TemporalGraph::initializeRRParams(int diameter){
 	walkLength = (int) floor(c_walkLength * diameter);
 	cout << "diameter = " << diameter << ", c_walkLength = " << c_walkLength << ", walkLength = " << walkLength << endl;
 	numStops = (int)(floor(c_numWalks*sqrt(numNodes * log(numNodes))));
+	cout << "numStops = " << numStops << ", c_numWalks = " << c_numWalks << ", numNodes = " << numNodes << endl;
 	if (numStops == 0) numStops = 1;
 	if (walkLength == 0){
 		numWalks = numStops;
@@ -254,6 +258,7 @@ void TemporalGraph::initializeRRParams(int diameter){
 	dstStops = (Stop*)malloc(sizeof(Stop) * (numStops + 1));
 
 	rrParamsInitialized = true;
+
 }
 
 int TemporalGraph::diameter(){
@@ -279,7 +284,7 @@ int TemporalGraph::diameter(){
 		queue.erase(queue.begin());
 	}
 
-	int dia = 1;
+	int dia = 6;
 	for (int i = 0; i < numNodes; i++)
 		if (dia < (color[i]-1))
 			dia = color[i]-1;
@@ -299,4 +304,28 @@ void TemporalGraph::changeForTopChain(){
 			e->setEndTime(e->getStartTime() + 1);
 		}
 	}
+}
+
+void TemporalGraph::populateRandomFile(){
+	numRandomNumbers = 1000000;
+	randomNumbers = new int[numRandomNumbers];
+
+	for (int i = 0; i < numRandomNumbers; i++){
+		randomNumbers[i] = rand();
+	}
+	randomNumbersUsed = 0;
+
+	/*randomFile.open("RandomNumbers", ios::binary | ios::out);
+	for (int i = 0; i < 1000000; i++){
+		int r = rand();
+		randomFile.write((char*)&r, sizeof(int));
+	}
+	randomFile.close();*/
+}
+
+int TemporalGraph::getNextRand(){
+	if (randomNumbersUsed >= numRandomNumbers) populateRandomFile();
+	int  x = randomNumbers[randomNumbersUsed];
+	randomNumbersUsed += 1;
+	return x;
 }

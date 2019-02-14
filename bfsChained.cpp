@@ -16,6 +16,9 @@ void TemporalGraph::removeEdgeFromIndex(int src, int dst, int startTime, int end
 
 int TemporalGraph::isReachable(int src, int dst, int startTime, int endTime, int c, bool fractional){
 	/*reset all Nodes*/
+	//cout << "BFS Log of Query for " << src << " to " << dst << endl;
+	struct timespec start, finish;
+	clock_gettime(CLOCK_MONOTONIC, &start);
 	int *earliestArrival = new int[numNodes];
 	bool *isInQueue = new bool[numNodes];
 	int *smallestHop = new int[numNodes];
@@ -31,6 +34,9 @@ int TemporalGraph::isReachable(int src, int dst, int startTime, int endTime, int
 	isInQueue[u] = true;
 	Interval *query = new Interval(startTime, endTime);
 	smallestHop[u] = 0;
+	clock_gettime(CLOCK_MONOTONIC, &finish);
+	cout << "I(s) = " << (finish.tv_sec - start.tv_sec) + (finish.tv_nsec - start.tv_nsec)/pow(10,9) << " " ;
+	clock_gettime(CLOCK_MONOTONIC, &start);
 	while (queue.size() > 0){
 		u = queue[0];
 		queue.erase(queue.begin());
@@ -46,7 +52,9 @@ int TemporalGraph::isReachable(int src, int dst, int startTime, int endTime, int
 			 && (e->getStartTime() >= earliestArrival[u])
 			 && ((earliestArrival[v] > e->getEndTime()) || (earliestArrival[v] == -1))
 			 && (e->getEndTime() <= endTime)){
+				//cout << "Traversed edge (" << u << ", " << v << " : [" << e->getStartTime() << ", " << e->getEndTime() << "] ";
 				earliestArrival [v] = e->getEndTime();
+				//cout << "EarliestArrival[v] = " << earliestArrival[v] << endl;
 				if ((smallestHop[v] == -1) || (smallestHop[v] > (smallestHop[u] + 1))) smallestHop[v] = smallestHop[u] + 1;
 				if (isInQueue[v] == false){
 					queue.push_back(v);
@@ -55,7 +63,8 @@ int TemporalGraph::isReachable(int src, int dst, int startTime, int endTime, int
 			}
 		}
 	}
-	cout << "smallestHop[dst] = " << smallestHop[dst] << endl;
+	clock_gettime(CLOCK_MONOTONIC, &finish);
+	cout << "B(s) = " << (finish.tv_sec - start.tv_sec) + (finish.tv_nsec - start.tv_nsec)/pow(10,9) << endl;
 	free(query);
 	int answer = 0;
 	if (earliestArrival[dst] != -1) answer =  1;
