@@ -246,7 +246,8 @@ void TemporalGraph::initializeRRParams(int diameter){
 
 	walkLength = (int) floor(c_walkLength * diameter);
 	cout << "diameter = " << diameter << ", c_walkLength = " << c_walkLength << ", walkLength = " << walkLength << endl;
-	numStops = (int)(floor(c_numWalks*sqrt(numNodes * log(numNodes))));
+	//numStops = (int)(floor(c_numWalks*sqrt(numNodes * log(numNodes))));
+	numStops = (int)(pow(pow(numNodes * log(numNodes), 2), 1.0/3.0));
 	cout << "numStops = " << numStops << ", c_numWalks = " << c_numWalks << ", numNodes = " << numNodes << endl;
 	if (numStops == 0) numStops = 1;
 	if (walkLength == 0){
